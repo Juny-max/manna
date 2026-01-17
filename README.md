@@ -1,30 +1,32 @@
-# Manna restaurant website
+# MANNA — Restaurant Website
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+Official repository for the MANNA restaurant website. This project showcases a responsive Next.js site for an authentic Ghanaian restaurant located in Accra.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/richcodey414-8279s-projects/v0-manna-restaurant-website)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/usKMBmtfJGS)
+## Features
+- Responsive layout with Tailwind CSS
+- Hero background video (local)
+- Food gallery and menu sections
 
-## Overview
+## Local development
+1. Install dependencies:
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+```bash
+pnpm install
+```
 
-## Deployment
+2. Run development server:
 
-Your project is live at:
+```bash
+pnpm dev
+```
 
-**[https://vercel.com/richcodey414-8279s-projects/v0-manna-restaurant-website](https://vercel.com/richcodey414-8279s-projects/v0-manna-restaurant-website)**
+Open http://localhost:3000 in your browser.
 
-## Build your app
+## Metadata & Favicon
+The site uses `public/images/manna.jpg` as the favicon and for social previews.
 
-Continue building your app on:
+## Contributing
+Feel free to open issues or PRs for fixes and improvements.
 
-**[https://v0.app/chat/usKMBmtfJGS](https://v0.app/chat/usKMBmtfJGS)**
-
-## How It Works
-
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+## License
+MIT

@@ -1,0 +1,10 @@
+{
+  "files.associations": {
+    "**/app/globals.css": "postcss",
+    "**/styles/**/*.css": "postcss",
+    "**/components/*.css": "postcss"
+  },
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore"
+}

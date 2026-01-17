@@ -1,42 +1,48 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 export default function Hero() {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoAvailable, setVideoAvailable] = useState(true)
 
   useEffect(() => {
     const video = videoRef.current
-    if (!video) return
+    if (!video || !videoAvailable) return
 
     video.play().catch((err) => console.log("[v0] Video play error:", err))
-
-    const handleEnded = () => {
-      video.currentTime = 0
-      video.play().catch((err) => console.log("[v0] Video replay error:", err))
-    }
-
-    video.addEventListener("ended", handleEnded)
-    return () => video.removeEventListener("ended", handleEnded)
-  }, [])
+  }, [videoAvailable])
 
   return (
     <section className="relative overflow-hidden py-12 lg:py-20 flex items-center min-h-screen">
-      <div className="absolute inset-0 -z-10">
-        <video
-          ref={videoRef}
-          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/video2-EqC7qhezMEuQiEi3aKlLxYf42SLHb6.mp4"
-          autoPlay
-          muted
-          playsInline
-          className="w-full h-full object-cover opacity-80"
-        />
-        {/* Lighter gradient overlay to let video show through */}
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-background/40"></div>
+      <div className="absolute inset-0">
+        {videoAvailable ? (
+          <video
+            ref={videoRef}
+            src="/images/video2.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            onContextMenu={(e) => e.preventDefault()}
+            onError={() => {
+              console.log("[v0] Local video failed to load, showing fallback poster")
+              setVideoAvailable(false)
+            }}
+            className="hero-video absolute inset-0 w-full h-full object-cover z-0 opacity-80 pointer-events-none"
+          />
+        ) : (
+          <div className="absolute inset-0 w-full h-full bg-black flex items-center justify-center">
+            <img src="/images/placeholder.jpg" alt="MANNA" className="w-full h-full object-cover" />
+          </div>
+        )}
+        {/* Gradient overlay placed above video — captures pointer events so video stays untouchable */}
+        <div className="absolute inset-0 z-10 hero-overlay bg-gradient-to-r from-background/90 via-background/60 to-background/40"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-20">
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Content with animations */}
           <motion.div

@@ -17,7 +17,7 @@ const foodItems = [
   },
   {
     name: "Sausage Rolls",
-    image: "/images/beef-20sausage-20rolls-20recipe-20-%20-20bascooking.jpg",
+    image: "/images/beef-20sausage-20rolls-20recipe-20-%2520-20bascooking.jpg",
     description: "Golden pastry sausage rolls",
     size: "medium",
   },
@@ -41,7 +41,7 @@ const foodItems = [
   },
   {
     name: "Cajun Seafood Boil",
-    image: "/images/cajun-20seafood-20boil-20-%20-20foxy-20folksy.jpg",
+    image: "/images/cajun-20seafood-20boil-20-%2520-20foxy-20folksy.jpg",
     description: "Fresh seafood mix",
     size: "large",
   },
@@ -59,7 +59,7 @@ const foodItems = [
   },
   {
     name: "Chicken Cheese Balls",
-    image: "/images/chicken-20cheese-20balls-20recipe-20-%20-20fun-20food-20frolic.jpg",
+    image: "/images/chicken-20cheese-20balls-20recipe-20-%2520-20fun-20food-20frolic.jpg",
     description: "Crispy cheese balls",
     size: "small",
   },

@@ -16,8 +16,18 @@ export const metadata: Metadata = {
     title: "MANNA | Authentic Ghanaian Cuisine",
     description: "Quality food, quick service, local favorite",
     type: "website",
+    images: ["/images/manna.jpg"],
   },
-    generator: 'v0.app'
+  twitter: {
+    card: "summary_large_image",
+    title: "MANNA | Authentic Ghanaian Cuisine",
+    description: "Experience authentic Ghanaian food at MANNA in Accra",
+    images: ["/images/manna.jpg"],
+  },
+  icons: {
+    icon: "/images/manna.jpg",
+    shortcut: "/images/manna.jpg",
+  },
 }
 
 export default function RootLayout({
