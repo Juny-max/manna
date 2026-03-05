@@ -34,8 +34,8 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         transition={{ duration: 0.6, delay: 0.2 }}
         className="mb-8"
       >
-        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center">
-          <img src="/images/manna.jpg" alt="MANNA Logo" className="w-full h-full object-contain" />
+        <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden flex items-center justify-center">
+          <img src="/images/manna.jpg" alt="MANNA Logo" className="w-full h-full object-contain rounded-2xl" />
         </div>
       </motion.div>
 

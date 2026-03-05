@@ -223,7 +223,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
 
                 {/* Email */}
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-                  <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                  <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                     <Mail size={16} /> Email
                   </label>
                   <input
@@ -238,7 +238,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
 
                 {/* Phone */}
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                  <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                  <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                     <Phone size={16} /> Phone
                   </label>
                   <input
@@ -259,7 +259,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                   className="grid grid-cols-2 gap-4"
                 >
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                       <Calendar size={16} /> Date
                     </label>
                     <input
@@ -271,7 +271,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                       <Clock size={16} /> Time
                     </label>
                     <input
@@ -297,7 +297,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
 
                 {/* Guests */}
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                  <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                  <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                     <Users size={16} /> Number of Guests
                   </label>
                   <input

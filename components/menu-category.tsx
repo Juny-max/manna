@@ -20,12 +20,15 @@ export default function MenuCategory({ data, index }: MenuCategoryProps) {
   const isDark = data.color === "bg-primary"
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
-      <div className="mb-6">
-        <div className="inline-block bg-accent px-6 py-3 rounded-lg">
-          <h3 className="text-xl font-bold uppercase tracking-wide text-primary">{data.title}</h3>
-        </div>
-      </div>
+    <motion.article
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      aria-label={data.title}
+    >
+      <header className="mb-6">
+        <h3 className={`category-title ${isDark ? "title-dark" : "title-brown"}`}>{data.title}</h3>
+      </header>
 
       <div className="space-y-4">
         {data.items.map((item, idx) => (
@@ -34,13 +37,13 @@ export default function MenuCategory({ data, index }: MenuCategoryProps) {
             initial={{ opacity: 0, x: -10 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 + idx * 0.05 }}
-            className="flex justify-between items-baseline gap-4 pb-2 border-b border-border/50 hover:border-primary/30 transition"
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2 pb-2 px-2 sm:px-0 border-b border-border/50 hover:border-primary/30 transition"
           >
-            <span className="text-foreground">{item.name}</span>
-            <span className="font-semibold text-primary whitespace-nowrap">{item.price}</span>
+            <span className="min-w-0 text-foreground">{item.name}</span>
+            <span className="font-semibold text-primary whitespace-nowrap text-right">{item.price}</span>
           </motion.div>
         ))}
       </div>
-    </motion.div>
+    </motion.article>
   )
 }

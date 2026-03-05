@@ -1,22 +1,62 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { MapPin, Clock, Phone } from "lucide-react"
+import { MapPin, Clock, Phone, CheckCircle2 } from "lucide-react"
 import ReservationModal from "./reservation-modal"
 import DeliveryPartners from "./delivery-partners"
+import { menuPages } from "@/lib/menu-data"
 
 export default function OrderSection() {
   const [activeTab, setActiveTab] = useState<"order" | "delivery">("order")
   const [isReservationOpen, setIsReservationOpen] = useState(false)
   const [orderForm, setOrderForm] = useState({ name: "", phone: "", items: "", delivery: "pickup" })
+  const [pageIndex, setPageIndex] = useState(0)
+  const [selectedItems, setSelectedItems] = useState<Record<string, { label: string; price: string }>>({})
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
-  const handleOrderSubmit = (e: React.FormEvent) => {
+  const totalPages = menuPages.length
+  const selectedEntries = Object.entries(selectedItems)
+  const selectedList = selectedEntries.map(([, item]) => item)
+  const selectedSummary = selectedList.length
+    ? selectedList.map((item) => `${item.label} (${item.price})`).join(", ")
+    : "No items selected yet."
+  const totalPrice = selectedList.reduce((sum, item) => {
+    const value = Number(item.price.replace(/[^0-9.]/g, ""))
+    return Number.isNaN(value) ? sum : sum + value
+  }, 0)
+  const formattedTotal = `GHS ${totalPrice.toFixed(2)}`
+
+  useEffect(() => {
+    setOrderForm((prev) => ({ ...prev, items: selectedSummary === "No items selected yet." ? "" : selectedSummary }))
+  }, [selectedSummary])
+
+  const handleToggleItem = (id: string, label: string, price: string) => {
+    setSelectedItems((prev) => {
+      const next = { ...prev }
+      if (next[id]) {
+        delete next[id]
+      } else {
+        next[id] = { label, price }
+      }
+      return next
+    })
+  }
+
+  const handleOrderPreview = (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSummaryOpen(true)
+  }
+
+  const handleOrderSubmit = () => {
     console.log("Order:", orderForm)
-    alert("Order received! We will contact you shortly.")
+    setIsSummaryOpen(false)
+    setIsConfirmOpen(true)
     setOrderForm({ name: "", phone: "", items: "", delivery: "pickup" })
+    setSelectedItems({})
+    setPageIndex(0)
   }
 
   return (
@@ -54,10 +94,10 @@ export default function OrderSection() {
               </div>
 
               {activeTab === "order" ? (
-                <motion.form
+                  <motion.form
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  onSubmit={handleOrderSubmit}
+                    onSubmit={handleOrderPreview}
                   className="space-y-5 bg-card p-6 md:p-8 rounded-xl border border-border"
                 >
                   <h3 className="text-2xl font-bold text-foreground">Quick Order</h3>
@@ -88,14 +128,75 @@ export default function OrderSection() {
 
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">What would you like?</label>
-                    <textarea
-                      required
-                      value={orderForm.items}
-                      onChange={(e) => setOrderForm({ ...orderForm, items: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-                      placeholder="e.g., 2x Beef Pattie, 1x Jollof Rice with Peppered Goat..."
-                      rows={4}
-                    />
+                    <div className="flipbook-scene">
+                      <div className="flipbook">
+                        {menuPages.map((page, pageIdx) => {
+                          const isFlipped = pageIdx < pageIndex
+                          const isActive = pageIdx === pageIndex
+                          const toneClass = page.tone === "dark" ? "title-dark" : "title-brown"
+
+                          return (
+                            <div
+                              key={page.id}
+                              className={`flip-page ${isFlipped ? "is-flipped" : ""} ${isActive ? "is-active" : ""}`}
+                              style={{ zIndex: menuPages.length - pageIdx }}
+                            >
+                              <div className="flip-page-inner">
+                                <div className="flip-page-header">
+                                  <h4 className={`flip-page-title flip-title ${toneClass}`}>{page.title}</h4>
+                                  <span className="flip-page-step">
+                                    Page {pageIdx + 1} of {totalPages}
+                                  </span>
+                                </div>
+                                <div className="flip-page-list">
+                                  {page.items.map((item) => {
+                                    const itemId = `${page.id}-${item.name}`
+                                    const isChecked = Boolean(selectedItems[itemId])
+
+                                    return (
+                                      <label
+                                        key={itemId}
+                                        className={`flip-item ${isChecked ? "is-selected" : ""}`}
+                                      >
+                                        <span className="flip-item-main">
+                                          <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={() => handleToggleItem(itemId, item.name, item.price)}
+                                          />
+                                          <span className="flip-item-name">{item.name}</span>
+                                        </span>
+                                        <span className="flip-item-price">{item.price}</span>
+                                      </label>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setPageIndex((prev) => Math.max(prev - 1, 0))}
+                        disabled={pageIndex === 0}
+                        className="px-4 py-2 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-muted/60 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous Page
+                      </button>
+                      <span className="text-xs text-foreground/60">Selected: {selectedList.length}</span>
+                      <button
+                        type="button"
+                        onClick={() => setPageIndex((prev) => Math.min(prev + 1, totalPages - 1))}
+                        disabled={pageIndex === totalPages - 1}
+                        className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next Page
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs text-foreground/60 line-clamp-2">{selectedSummary}</p>
                   </div>
 
                   <div>
@@ -214,6 +315,121 @@ export default function OrderSection() {
           </div>
         </div>
       </section>
+
+      {isSummaryOpen && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center px-4 py-6">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsSummaryOpen(false)}
+            aria-hidden="true"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.25 }}
+            className="relative w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="h-12 w-12 rounded-2xl overflow-hidden bg-background">
+                <img src="/images/manna.jpg" alt="Manna" className="h-full w-full object-cover" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-foreground/50">Quick Order</p>
+                <h3 className="text-xl font-bold text-foreground">Order Summary</h3>
+              </div>
+            </div>
+
+            <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+              {selectedEntries.length ? (
+                selectedEntries.map(([id, item]) => (
+                  <div
+                    key={id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/60 px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{item.label}</p>
+                      <p className="text-xs text-foreground/60">{item.price}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleItem(id, item.label, item.price)}
+                      className="text-xs font-semibold text-red-600 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-foreground/60">No items selected yet.</p>
+              )}
+            </div>
+
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+              <span className="text-sm text-foreground/70">Total</span>
+              <span className="text-lg font-semibold text-foreground">{formattedTotal}</span>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setIsSummaryOpen(false)}
+                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/60 transition"
+              >
+                Add More
+              </button>
+              <button
+                type="button"
+                onClick={handleOrderSubmit}
+                disabled={selectedEntries.length === 0}
+                className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Confirm Order
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {isConfirmOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-6">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsConfirmOpen(false)}
+            aria-hidden="true"
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="relative w-full max-w-md rounded-2xl border border-border bg-card px-6 py-8 shadow-2xl"
+          >
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="h-16 w-16 rounded-2xl overflow-hidden bg-background shadow-sm">
+                <img src="/images/manna.jpg" alt="Manna" className="h-full w-full object-cover" />
+              </div>
+              <motion.div
+                initial={{ scale: 0.8, rotate: -10 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+              >
+                <CheckCircle2 className="h-9 w-9 text-primary" />
+              </motion.div>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">Order received!</h3>
+                <p className="text-sm text-foreground/70">We will contact you shortly.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsConfirmOpen(false)}
+                className="mt-2 w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition"
+              >
+                Done
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Reservation Modal */}
       <ReservationModal isOpen={isReservationOpen} onClose={() => setIsReservationOpen(false)} />

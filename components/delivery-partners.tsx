@@ -7,7 +7,7 @@ export default function DeliveryPartners() {
     {
       name: "Bolt Food",
       logo: "/images/bolt-20food-20logo.jpg",
-      url: "#",
+      url: "https://food.bolt.eu/en/137-accra/p/177339-mannas-kitchen/",
     },
     {
       name: "Glovo",

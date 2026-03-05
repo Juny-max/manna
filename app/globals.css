@@ -5,6 +5,9 @@
 
 :root {
   /* MANNA - Warm Organic Palette */
+  --manna-brown: #c59b76;
+  --manna-dark: #2b2927;
+  --manna-bg: #f4ece3;
   --background: oklch(0.95 0 0);
   --foreground: oklch(0.2 0 0);
   --card: oklch(0.98 0 0);
@@ -125,21 +128,195 @@
   }
 }
 
-/* Organic brush stroke effect for section headers */
-.brush-header {
-  position: relative;
-  display: inline-block;
-  padding: 8px 24px;
+/* ────────────────────────────────────────────────────────
+   Menu category brush-mask titles
+   Uses the black-on-transparent /brush-stroke.png as a
+   CSS mask so the background colour shows through the
+   painted shape, while the text sits safely inside.
+   ──────────────────────────────────────────────────────── */
+.category-title {
+  /* ── mask ── */
+  -webkit-mask-image: url("/brush-stroke.png");
+  mask-image: url("/brush-stroke.png");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+
+  /* ── layout: keep text centred inside the painted area ── */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: clamp(28px, 7vw, 44px) clamp(84px, 20vw, 150px);
+  min-width: clamp(240px, 80vw, 380px);
+  min-height: clamp(96px, 20vw, 140px);
+
+  /* ── typography ── */
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: center;
 }
 
-.brush-header::before {
+/* ── colour modifiers ── */
+.title-brown {
+  background-color: var(--manna-brown);
+  color: var(--manna-dark);
+}
+
+.title-dark {
+  background-color: var(--manna-dark);
+  color: #f4ece3;
+}
+
+/* Order flipbook page UI */
+.flipbook-scene {
+  perspective: 1000px;
+}
+
+.flipbook {
+  position: relative;
+  transform-style: preserve-3d;
+  height: clamp(360px, 52vh, 520px);
+}
+
+.flip-page {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  backface-visibility: hidden;
+  transition: transform 0.8s ease-in-out, box-shadow 0.8s ease-in-out;
+  border-radius: 20px;
+  background: var(--manna-bg);
+  border: 1px solid rgba(43, 41, 39, 0.1);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.flip-page::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-color: var(--color-accent);
-  border-radius: 4px;
-  transform: skewX(-8deg);
-  z-index: -1;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0));
+  opacity: 0.45;
+  transition: opacity 0.8s ease-in-out, background 0.8s ease-in-out;
+  pointer-events: none;
+}
+
+.flip-page.is-flipped {
+  transform: rotateY(-180deg);
+  box-shadow: -12px 18px 36px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+
+.flip-page.is-flipped::after {
+  background: linear-gradient(270deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0));
+  opacity: 0.65;
+}
+
+.flip-page-inner {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  color: var(--manna-dark);
+}
+
+.flip-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.flip-page-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.flip-title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  -webkit-mask-image: url("/brush-stroke.png");
+  mask-image: url("/brush-stroke.png");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  padding: 18px 84px;
+  min-width: 260px;
+  min-height: 88px;
+  text-align: center;
+  line-height: 1;
+}
+
+.flip-page-step {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(43, 41, 39, 0.6);
+}
+
+.flip-page-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.flip-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(43, 41, 39, 0.08);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.flip-item.is-selected {
+  background: rgba(197, 155, 118, 0.18);
+  border-color: rgba(197, 155, 118, 0.45);
+}
+
+.flip-item-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.flip-item-name {
+  font-size: 0.92rem;
+  color: var(--manna-dark);
+}
+
+.flip-item-price {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--manna-dark);
+  white-space: nowrap;
 }
 
 /* Smooth scroll behavior */

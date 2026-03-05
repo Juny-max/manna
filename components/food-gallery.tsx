@@ -78,18 +78,14 @@ export default function FoodGallery() {
           <p className="text-lg text-foreground/70">Explore our delicious authentic Ghanaian cuisine</p>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[250px]">
+        <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
           {foodItems.map((item, idx) => {
-            let colSpan = "col-span-1"
-            let rowSpan = "row-span-1"
-
-            if (item.size === "large") {
-              colSpan = "col-span-2"
-              rowSpan = "row-span-2"
-            } else if (item.size === "medium") {
-              colSpan = "col-span-1"
-              rowSpan = "row-span-1"
-            }
+            const heightClass =
+              item.size === "large"
+                ? "h-[320px] md:h-[360px]"
+                : item.size === "medium"
+                  ? "h-[260px] md:h-[300px]"
+                  : "h-[220px] md:h-[240px]"
 
             return (
               <motion.div
@@ -98,7 +94,7 @@ export default function FoodGallery() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ delay: idx * 0.05 }}
                 whileHover={{ scale: 1.02 }}
-                className={`${colSpan} ${rowSpan} group relative overflow-hidden rounded-2xl shadow-lg cursor-pointer`}
+                className={`mb-4 break-inside-avoid ${heightClass} group relative overflow-hidden rounded-2xl shadow-lg cursor-pointer`}
               >
                 <img
                   src={item.image || "/placeholder.svg?height=250&width=250&query=food"}
