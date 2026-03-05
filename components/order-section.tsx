@@ -3,7 +3,7 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
-import { MapPin, Clock, Phone, CheckCircle2 } from "lucide-react"
+import { MapPin, Clock, Phone, CheckCircle2, ChevronDown } from "lucide-react"
 import ReservationModal from "./reservation-modal"
 import DeliveryPartners from "./delivery-partners"
 import { menuPages } from "@/lib/menu-data"
@@ -16,9 +16,17 @@ export default function OrderSection() {
   const [selectedItems, setSelectedItems] = useState<Record<string, { label: string; price: string }>>({})
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [isDeliveryOpen, setIsDeliveryOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const prefersReducedMotion = useReducedMotion()
   const reduceMotion = prefersReducedMotion || isMobile
+
+  const deliveryOptions = [
+    { value: "pickup", label: "Pickup" },
+    { value: "delivery", label: "Delivery" },
+  ]
+  const deliveryLabel =
+    deliveryOptions.find((option) => option.value === orderForm.delivery)?.label ?? "Select"
 
   const totalPages = menuPages.length
   const selectedEntries = Object.entries(selectedItems)
@@ -213,14 +221,14 @@ export default function OrderSection() {
 
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Delivery Method</label>
-                    <select
-                      value={orderForm.delivery}
-                      onChange={(e) => setOrderForm({ ...orderForm, delivery: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+                    <button
+                      type="button"
+                      onClick={() => setIsDeliveryOpen(true)}
+                      className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition flex items-center justify-between"
                     >
-                      <option value="pickup">Pickup</option>
-                      <option value="delivery">Delivery</option>
-                    </select>
+                      <span className="font-medium">{deliveryLabel}</span>
+                      <ChevronDown className="h-4 w-4 text-foreground/60" />
+                    </button>
                   </div>
 
                   <motion.button
@@ -439,6 +447,71 @@ export default function OrderSection() {
                 Done
               </button>
             </div>
+          </motion.div>
+        </div>
+      )}
+
+      {isDeliveryOpen && (
+        <div className="fixed inset-0 z-[9997] flex items-center justify-center px-4 py-6">
+          <div
+            className={`absolute inset-0 bg-black/40 ${isMobile ? "" : "backdrop-blur-sm"}`}
+            onClick={() => setIsDeliveryOpen(false)}
+            aria-hidden="true"
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: reduceMotion ? 0.2 : 0.3 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm rounded-2xl border border-border bg-card px-6 py-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delivery-title"
+          >
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-foreground/50">Quick Order</p>
+              <h3 id="delivery-title" className="text-lg font-bold text-foreground">
+                Delivery Method
+              </h3>
+              <p className="text-sm text-foreground/60">Choose how you want to receive your order.</p>
+            </div>
+
+            <div className="space-y-3">
+              {deliveryOptions.map((option) => {
+                const isSelected = option.value === orderForm.delivery
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      setOrderForm({ ...orderForm, delivery: option.value })
+                      setIsDeliveryOpen(false)
+                    }}
+                    className={`w-full rounded-xl border px-4 py-3 text-left transition flex items-center justify-between gap-3 ${
+                      isSelected
+                        ? "border-primary/60 bg-primary/10"
+                        : "border-border bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <span className="text-sm font-semibold text-foreground">{option.label}</span>
+                    <span
+                      className={`h-3 w-3 rounded-full border ${
+                        isSelected ? "border-primary bg-primary" : "border-foreground/30"
+                      }`}
+                    />
+                  </button>
+                )
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsDeliveryOpen(false)}
+              className="mt-5 w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/60 transition"
+            >
+              Close
+            </button>
           </motion.div>
         </div>
       )}

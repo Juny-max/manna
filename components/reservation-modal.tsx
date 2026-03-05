@@ -15,6 +15,105 @@ const BUSINESS_HOURS = [
   { day: "Saturday", open: "11:00", close: "17:00" }, // 11 AM - 5 PM
   { day: "Sunday", open: "13:00", close: "17:00" }, // 1 PM - 5 PM
 ]
+const DATE_RANGE_DAYS = 30
+const TIME_STEP_MINUTES = 30
+
+const toDateValue = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+const formatDateLabel = (date: Date) =>
+  date.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })
+
+const formatTimeLabel = (value: string) => {
+  const [hour, minute] = value.split(":").map(Number)
+  const temp = new Date()
+  temp.setHours(hour, minute, 0, 0)
+  return temp.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+}
+
+const parseDateValue = (value: string) => {
+  const [year, month, day] = value.split("-").map(Number)
+  return new Date(year, month - 1, day)
+}
+
+const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)
+const endOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0)
+const isSameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+
+const getDayCategory = (dateObj: Date) => {
+  const dayOfWeek = dateObj.getDay()
+  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+    return "Mon-Fri"
+  }
+  if (dayOfWeek === 6) {
+    return "Saturday"
+  }
+  return "Sunday"
+}
+
+const getBusinessHours = (dateObj: Date) => {
+  const dayCategory = getDayCategory(dateObj)
+  return BUSINESS_HOURS.find((h) => h.day === dayCategory)
+}
+
+const buildCalendarDays = (month: Date, minDate: Date, maxDate: Date) => {
+  const monthStart = startOfMonth(month)
+  const monthEnd = endOfMonth(month)
+  const startWeekday = monthStart.getDay()
+  const days: { date: Date; inMonth: boolean; disabled: boolean }[] = []
+
+  for (let i = startWeekday; i > 0; i -= 1) {
+    const date = new Date(monthStart)
+    date.setDate(monthStart.getDate() - i)
+    days.push({ date, inMonth: false, disabled: true })
+  }
+
+  for (let day = 1; day <= monthEnd.getDate(); day += 1) {
+    const date = new Date(monthStart)
+    date.setDate(day)
+    const disabled = date < minDate || date > maxDate
+    days.push({ date, inMonth: true, disabled })
+  }
+
+  while (days.length < 42) {
+    const date = new Date(monthEnd)
+    date.setDate(monthEnd.getDate() + (days.length - (startWeekday + monthEnd.getDate()) + 1))
+    days.push({ date, inMonth: false, disabled: true })
+  }
+
+  return days
+}
+
+const buildTimeSlots = (dateValue: string) => {
+  if (!dateValue) return []
+  const dateObj = parseDateValue(dateValue)
+  const hours = getBusinessHours(dateObj)
+  if (!hours) return []
+
+  const [openHour, openMin] = hours.open.split(":").map(Number)
+  const [closeHour, closeMin] = hours.close.split(":").map(Number)
+  const openInMinutes = openHour * 60 + openMin
+  const closeInMinutes = closeHour * 60 + closeMin
+  const slots: { value: string; label: string }[] = []
+
+  for (let minutes = openInMinutes; minutes < closeInMinutes; minutes += TIME_STEP_MINUTES) {
+    const hour = Math.floor(minutes / 60)
+    const minute = minutes % 60
+    const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+    slots.push({ value, label: formatTimeLabel(value) })
+  }
+
+  return slots
+}
 
 export default function ReservationModal({ isOpen, onClose }: ReservationModalProps) {
   const [formData, setFormData] = useState({
@@ -30,6 +129,26 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
   const [isMobile, setIsMobile] = useState(false)
   const prefersReducedMotion = useReducedMotion()
   const reduceMotion = prefersReducedMotion || isMobile
+  const [isDateOpen, setIsDateOpen] = useState(false)
+  const [isTimeOpen, setIsTimeOpen] = useState(false)
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return startOfMonth(today)
+  })
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const rangeEnd = new Date(today)
+  rangeEnd.setDate(rangeEnd.getDate() + DATE_RANGE_DAYS - 1)
+
+  const calendarDays = buildCalendarDays(calendarMonth, today, rangeEnd)
+  const availableTimes = buildTimeSlots(formData.date)
+  const selectedDate = formData.date ? parseDateValue(formData.date) : null
+  const selectedDateLabel = selectedDate ? formatDateLabel(selectedDate) : "Select a date"
+  const selectedTimeLabel = formData.time ? formatTimeLabel(formData.time) : "Select a time"
+  const canGoPrevMonth = calendarMonth > startOfMonth(today)
+  const canGoNextMonth = calendarMonth < startOfMonth(rangeEnd)
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 640px)")
@@ -42,20 +161,8 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
   const isRestaurantOpen = (date: string, time: string): boolean => {
     if (!date || !time) return true // Pass validation if not filled yet
 
-    const dateObj = new Date(date)
-    const dayOfWeek = dateObj.getDay()
-
-    // Determine day category
-    let dayCategory = ""
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      dayCategory = "Mon-Fri"
-    } else if (dayOfWeek === 6) {
-      dayCategory = "Saturday"
-    } else if (dayOfWeek === 0) {
-      dayCategory = "Sunday"
-    }
-
-    const hours = BUSINESS_HOURS.find((h) => h.day === dayCategory)
+    const dateObj = parseDateValue(date)
+    const hours = getBusinessHours(dateObj)
     if (!hours) return false
 
     const [timeHour, timeMin] = time.split(":").map(Number)
@@ -79,8 +186,24 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
     }
   }
 
+  const handleDateSelect = (value: string) => {
+    handleDateTimeChange(value, "")
+    setIsDateOpen(false)
+    setIsTimeOpen(true)
+  }
+
+  const handleTimeSelect = (value: string) => {
+    handleDateTimeChange(formData.date, value)
+    setIsTimeOpen(false)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!formData.date || !formData.time) {
+      setError("Please select a date and time.")
+      return
+    }
 
     if (!isRestaurantOpen(formData.date, formData.time)) {
       setError("Please select a time when we are open.")
@@ -294,25 +417,138 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                     <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                       <Calendar size={16} /> Date
                     </label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.date}
-                      onChange={(e) => handleDateTimeChange(e.target.value, formData.time)}
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-                    />
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDateOpen((prev) => !prev)
+                          setIsTimeOpen(false)
+                        }}
+                        className="w-full px-4 py-3 rounded-lg border border-border bg-background text-left text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+                      >
+                        {selectedDateLabel}
+                      </button>
+                      {isDateOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: reduceMotion ? 0.2 : 0.3 }}
+                          className="absolute z-20 mt-2 w-full rounded-xl border border-border bg-background p-3 shadow-xl"
+                        >
+                          <div className="flex items-center justify-between px-1 pb-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCalendarMonth(
+                                  (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
+                                )
+                              }
+                              disabled={!canGoPrevMonth}
+                              className="rounded-lg px-2 py-1 text-xs font-semibold text-foreground hover:bg-muted/60 transition disabled:opacity-40"
+                            >
+                              Prev
+                            </button>
+                            <span className="text-sm font-semibold text-foreground">
+                              {calendarMonth.toLocaleDateString("en-US", {
+                                month: "long",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCalendarMonth(
+                                  (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
+                                )
+                              }
+                              disabled={!canGoNextMonth}
+                              className="rounded-lg px-2 py-1 text-xs font-semibold text-foreground hover:bg-muted/60 transition disabled:opacity-40"
+                            >
+                              Next
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-7 gap-1 text-[11px] uppercase text-foreground/50 mb-2">
+                            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                              <span key={day} className="text-center">
+                                {day}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="grid grid-cols-7 gap-1">
+                            {calendarDays.map((day) => {
+                              const dateValue = toDateValue(day.date)
+                              const isSelected = selectedDate ? isSameDay(day.date, selectedDate) : false
+                              const isToday = isSameDay(day.date, today)
+                              const isDisabled = day.disabled
+
+                              return (
+                                <button
+                                  key={dateValue}
+                                  type="button"
+                                  onClick={() => handleDateSelect(dateValue)}
+                                  disabled={isDisabled}
+                                  className={`h-9 w-9 rounded-lg text-xs font-semibold transition ${
+                                    isSelected
+                                      ? "bg-primary text-primary-foreground"
+                                      : isToday
+                                        ? "border border-primary text-primary"
+                                        : "text-foreground"
+                                  } ${isDisabled ? "opacity-30 cursor-not-allowed" : "hover:bg-muted/60"}`}
+                                >
+                                  {day.date.getDate()}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                       <Clock size={16} /> Time
                     </label>
-                    <input
-                      type="time"
-                      required
-                      value={formData.time}
-                      onChange={(e) => handleDateTimeChange(formData.date, e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-                    />
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!formData.date) return
+                          setIsTimeOpen((prev) => !prev)
+                          setIsDateOpen(false)
+                        }}
+                        disabled={!formData.date}
+                        className="w-full px-4 py-3 rounded-lg border border-border bg-background text-left text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {formData.date ? selectedTimeLabel : "Select date first"}
+                      </button>
+                      {isTimeOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: reduceMotion ? 0.2 : 0.3 }}
+                          className="absolute z-20 mt-2 w-full max-h-56 overflow-y-auto rounded-xl border border-border bg-background p-2 shadow-xl"
+                        >
+                          {availableTimes.length ? (
+                            availableTimes.map((time) => (
+                              <button
+                                key={time.value}
+                                type="button"
+                                onClick={() => handleTimeSelect(time.value)}
+                                className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                                  formData.time === time.value
+                                    ? "bg-primary/10 text-primary"
+                                    : "hover:bg-muted/60 text-foreground"
+                                }`}
+                              >
+                                {time.label}
+                              </button>
+                            ))
+                          ) : (
+                            <p className="px-3 py-2 text-sm text-foreground/60">No available times.</p>
+                          )}
+                        </motion.div>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
 
