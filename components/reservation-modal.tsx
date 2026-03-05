@@ -1,8 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useEffect, useState } from "react"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { X, Calendar, Clock, Users, Mail, Phone, Check, AlertCircle } from "lucide-react"
 
 interface ReservationModalProps {
@@ -27,6 +27,17 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
   })
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState("")
+  const [isMobile, setIsMobile] = useState(false)
+  const prefersReducedMotion = useReducedMotion()
+  const reduceMotion = prefersReducedMotion || isMobile
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 640px)")
+    const update = () => setIsMobile(media.matches)
+    update()
+    media.addEventListener("change", update)
+    return () => media.removeEventListener("change", update)
+  }, [])
 
   const isRestaurantOpen = (date: string, time: string): boolean => {
     if (!date || !time) return true // Pass validation if not filled yet
@@ -93,30 +104,38 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: reduceMotion ? 0.2 : 0.35 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className={`fixed inset-0 bg-black/50 ${isMobile ? "" : "backdrop-blur-sm"} z-50 flex items-center justify-center p-4`}
         >
           {isSubmitted && (
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0.2 : 0.3 }}
               className="fixed inset-0 flex items-center justify-center pointer-events-none z-51"
             >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                transition={reduceMotion ? { duration: 0.2 } : { type: "spring", stiffness: 260, damping: 20 }}
                 className="bg-background rounded-3xl shadow-2xl p-8 max-w-sm mx-auto text-center pointer-events-auto"
               >
                 {/* Success Icon Animation */}
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  transition={
+                    reduceMotion ? { duration: 0.2 } : { delay: 0.2, type: "spring", stiffness: 200 }
+                  }
                   className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-6"
                 >
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.4 }}>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: reduceMotion ? 0 : 0.4, duration: reduceMotion ? 0.2 : 0.3 }}
+                  >
                     <Check size={40} className="text-primary-foreground" strokeWidth={3} />
                   </motion.div>
                 </motion.div>
@@ -124,7 +143,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                 <motion.h3
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: reduceMotion ? 0 : 0.3, duration: reduceMotion ? 0.2 : 0.3 }}
                   className="text-2xl font-bold text-foreground mb-2"
                 >
                   Table Reserved!
@@ -133,7 +152,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
+                  transition={{ delay: reduceMotion ? 0 : 0.4, duration: reduceMotion ? 0.2 : 0.3 }}
                   className="text-foreground/70 mb-6"
                 >
                   Your reservation has been confirmed. We'll see you soon at MANNA!
@@ -142,7 +161,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
+                  transition={{ delay: reduceMotion ? 0 : 0.5, duration: reduceMotion ? 0.2 : 0.3 }}
                   className="space-y-2 text-sm text-foreground/60 mb-6 bg-muted/50 p-4 rounded-lg"
                 >
                   <p>
@@ -162,7 +181,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
+                  transition={{ delay: reduceMotion ? 0 : 0.6, duration: reduceMotion ? 0.2 : 0.3 }}
                   className="text-xs text-foreground/50"
                 >
                   Redirecting in 3 seconds...
@@ -177,6 +196,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0.2 : 0.35 }}
               onClick={(e) => e.stopPropagation()}
               className="bg-background rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
             >
@@ -195,7 +215,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+                transition={{ delay: reduceMotion ? 0 : 0.1, duration: reduceMotion ? 0.2 : 0.3 }}
                 className="p-6 bg-muted/50 border-b border-border"
               >
                 <p className="text-sm font-semibold text-foreground mb-3">Our Hours</p>
@@ -209,7 +229,11 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
               {/* Form */}
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 {/* Name */}
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: reduceMotion ? 0 : 0.1, duration: reduceMotion ? 0.2 : 0.3 }}
+                >
                   <label className="block text-sm font-medium text-foreground mb-2">Full Name</label>
                   <input
                     type="text"
@@ -222,7 +246,11 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                 </motion.div>
 
                 {/* Email */}
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: reduceMotion ? 0 : 0.15, duration: reduceMotion ? 0.2 : 0.3 }}
+                >
                   <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                     <Mail size={16} /> Email
                   </label>
@@ -237,7 +265,11 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                 </motion.div>
 
                 {/* Phone */}
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: reduceMotion ? 0 : 0.2, duration: reduceMotion ? 0.2 : 0.3 }}
+                >
                   <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                     <Phone size={16} /> Phone
                   </label>
@@ -255,7 +287,7 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
+                  transition={{ delay: reduceMotion ? 0 : 0.25, duration: reduceMotion ? 0.2 : 0.3 }}
                   className="grid grid-cols-2 gap-4"
                 >
                   <div>
@@ -296,7 +328,11 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                 )}
 
                 {/* Guests */}
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: reduceMotion ? 0 : 0.3, duration: reduceMotion ? 0.2 : 0.3 }}
+                >
                   <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                     <Users size={16} /> Number of Guests
                   </label>
@@ -316,10 +352,10 @@ export default function ReservationModal({ isOpen, onClose }: ReservationModalPr
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 }}
+                  transition={{ delay: reduceMotion ? 0 : 0.35, duration: reduceMotion ? 0.2 : 0.3 }}
                   type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                   disabled={!!error}
                   className="w-full bg-primary text-primary-foreground py-4 rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >

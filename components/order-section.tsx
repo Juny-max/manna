@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import { MapPin, Clock, Phone, CheckCircle2 } from "lucide-react"
 import ReservationModal from "./reservation-modal"
 import DeliveryPartners from "./delivery-partners"
@@ -16,6 +16,9 @@ export default function OrderSection() {
   const [selectedItems, setSelectedItems] = useState<Record<string, { label: string; price: string }>>({})
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const prefersReducedMotion = useReducedMotion()
+  const reduceMotion = prefersReducedMotion || isMobile
 
   const totalPages = menuPages.length
   const selectedEntries = Object.entries(selectedItems)
@@ -28,6 +31,14 @@ export default function OrderSection() {
     return Number.isNaN(value) ? sum : sum + value
   }, 0)
   const formattedTotal = `GHS ${totalPrice.toFixed(2)}`
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 640px)")
+    const update = () => setIsMobile(media.matches)
+    update()
+    media.addEventListener("change", update)
+    return () => media.removeEventListener("change", update)
+  }, [])
 
   useEffect(() => {
     setOrderForm((prev) => ({ ...prev, items: selectedSummary === "No items selected yet." ? "" : selectedSummary }))
@@ -68,7 +79,7 @@ export default function OrderSection() {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: reduceMotion ? 0.3 : 0.5 }}
             >
               <div className="flex gap-3 mb-8 flex-col sm:flex-row">
                 <button
@@ -95,11 +106,12 @@ export default function OrderSection() {
 
               {activeTab === "order" ? (
                   <motion.form
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: reduceMotion ? 0.25 : 0.4 }}
                     onSubmit={handleOrderPreview}
-                  className="space-y-5 bg-card p-6 md:p-8 rounded-xl border border-border"
-                >
+                    className="space-y-5 bg-card p-6 md:p-8 rounded-xl border border-border"
+                  >
                   <h3 className="text-2xl font-bold text-foreground">Quick Order</h3>
 
                   <div>
@@ -213,8 +225,8 @@ export default function OrderSection() {
 
                   <motion.button
                     type="submit"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                     className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:opacity-90 transition"
                   >
                     Place Order
@@ -231,7 +243,7 @@ export default function OrderSection() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: reduceMotion ? 0.3 : 0.5 }}
               className="space-y-8"
             >
               <div>
@@ -240,7 +252,7 @@ export default function OrderSection() {
 
               <div className="space-y-6">
                 <motion.div
-                  whileHover={{ x: 8 }}
+                  whileHover={reduceMotion ? undefined : { x: 8 }}
                   className="flex gap-4 p-4 rounded-lg hover:bg-muted/50 transition cursor-pointer"
                 >
                   <MapPin size={24} className="text-primary flex-shrink-0 mt-1" />
@@ -259,7 +271,7 @@ export default function OrderSection() {
                 </motion.div>
 
                 <motion.div
-                  whileHover={{ x: 8 }}
+                  whileHover={reduceMotion ? undefined : { x: 8 }}
                   className="flex gap-4 p-4 rounded-lg hover:bg-muted/50 transition cursor-pointer"
                 >
                   <Clock size={24} className="text-primary flex-shrink-0 mt-1" />
@@ -271,7 +283,7 @@ export default function OrderSection() {
                 </motion.div>
 
                 <motion.div
-                  whileHover={{ x: 8 }}
+                  whileHover={reduceMotion ? undefined : { x: 8 }}
                   className="flex gap-4 p-4 rounded-lg hover:bg-muted/50 transition cursor-pointer"
                 >
                   <Phone size={24} className="text-primary flex-shrink-0 mt-1" />
@@ -304,8 +316,8 @@ export default function OrderSection() {
 
               {/* Reserve Button */}
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 onClick={() => setIsReservationOpen(true)}
                 className="w-full bg-primary text-primary-foreground py-4 px-6 rounded-lg font-semibold hover:opacity-90 transition"
               >
@@ -319,14 +331,14 @@ export default function OrderSection() {
       {isSummaryOpen && (
         <div className="fixed inset-0 z-[9998] flex items-center justify-center px-4 py-6">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className={`absolute inset-0 bg-black/50 ${isMobile ? "" : "backdrop-blur-sm"}`}
             onClick={() => setIsSummaryOpen(false)}
             aria-hidden="true"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: reduceMotion ? 0.2 : 0.25 }}
             className="relative w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl"
           >
             <div className="flex items-center gap-4 mb-4">
@@ -393,14 +405,14 @@ export default function OrderSection() {
       {isConfirmOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-6">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className={`absolute inset-0 bg-black/50 ${isMobile ? "" : "backdrop-blur-sm"}`}
             onClick={() => setIsConfirmOpen(false)}
             aria-hidden="true"
           />
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: reduceMotion ? 0.2 : 0.3 }}
             className="relative w-full max-w-md rounded-2xl border border-border bg-card px-6 py-8 shadow-2xl"
           >
             <div className="flex flex-col items-center text-center gap-4">
@@ -410,7 +422,7 @@ export default function OrderSection() {
               <motion.div
                 initial={{ scale: 0.8, rotate: -10 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                transition={reduceMotion ? { duration: 0.2 } : { type: "spring", stiffness: 180, damping: 14 }}
                 className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
               >
                 <CheckCircle2 className="h-9 w-9 text-primary" />
