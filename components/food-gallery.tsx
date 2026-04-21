@@ -28,9 +28,9 @@ const foodItems = [
     size: "medium",
   },
   {
-    name: "Gari Foto",
+    name: "Gari fɔtɔ",
     image: "/images/gari-20foto.jpg",
-    description: "Savory gari foto",
+    description: "Savory gari fɔtɔ",
     size: "large",
   },
   {
