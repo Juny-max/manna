@@ -1,11 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
-import { MapPin, Clock, Phone, CheckCircle2, ChevronDown } from "lucide-react"
+import { MapPin, Clock, Phone, ChevronDown, Loader2, ShieldCheck, Wallet } from "lucide-react"
+import { DotLottieReact } from "@lottiefiles/dotlottie-react"
 import ReservationModal from "./reservation-modal"
 import DeliveryPartners from "./delivery-partners"
+import DeliveryDetailsModal, { type DeliveryDetailsFormValues } from "./delivery-details-modal"
 import { menuPages } from "@/lib/menu-data"
 
 export default function OrderSection() {
@@ -17,7 +19,14 @@ export default function OrderSection() {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false)
+  const [isDeliveryDetailsOpen, setIsDeliveryDetailsOpen] = useState(false)
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false)
+  const [isPaymentSuccess, setIsPaymentSuccess] = useState(false)
+  const [confirmDescription, setConfirmDescription] = useState("We will contact you shortly.")
+  const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetailsFormValues | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const paymentTimerIds = useRef<number[]>([])
   const prefersReducedMotion = useReducedMotion()
   const reduceMotion = prefersReducedMotion || isMobile
 
@@ -52,6 +61,49 @@ export default function OrderSection() {
     setOrderForm((prev) => ({ ...prev, items: selectedSummary === "No items selected yet." ? "" : selectedSummary }))
   }, [selectedSummary])
 
+  const clearPaymentTimers = () => {
+    paymentTimerIds.current.forEach((timerId) => window.clearTimeout(timerId))
+    paymentTimerIds.current = []
+  }
+
+  useEffect(() => {
+    return () => {
+      clearPaymentTimers()
+    }
+  }, [])
+
+  const queuePaymentTimer = (callback: () => void, delay: number) => {
+    const timerId = window.setTimeout(callback, delay)
+    paymentTimerIds.current.push(timerId)
+  }
+
+  const resetOrderState = () => {
+    setOrderForm({ name: "", phone: "", items: "", delivery: "pickup" })
+    setSelectedItems({})
+    setPageIndex(0)
+    setDeliveryDetails(null)
+  }
+
+  const finalizeOrder = (confirmationText: string, details?: DeliveryDetailsFormValues) => {
+    console.log("Order:", {
+      ...orderForm,
+      items: selectedSummary === "No items selected yet." ? "" : selectedSummary,
+      total: formattedTotal,
+      deliveryDetails: details ?? null,
+    })
+
+    setConfirmDescription(confirmationText)
+    setIsSummaryOpen(false)
+    setIsDeliveryOpen(false)
+    setIsDeliveryDetailsOpen(false)
+    setIsPaymentOpen(false)
+    setIsPaymentProcessing(false)
+    setIsPaymentSuccess(false)
+    setIsConfirmOpen(true)
+    clearPaymentTimers()
+    resetOrderState()
+  }
+
   const handleToggleItem = (id: string, label: string, price: string) => {
     setSelectedItems((prev) => {
       const next = { ...prev }
@@ -70,12 +122,52 @@ export default function OrderSection() {
   }
 
   const handleOrderSubmit = () => {
-    console.log("Order:", orderForm)
     setIsSummaryOpen(false)
-    setIsConfirmOpen(true)
-    setOrderForm({ name: "", phone: "", items: "", delivery: "pickup" })
-    setSelectedItems({})
-    setPageIndex(0)
+
+    if (orderForm.delivery === "delivery") {
+      setIsDeliveryDetailsOpen(true)
+      return
+    }
+
+    finalizeOrder("We will contact you shortly.")
+  }
+
+  const handleDeliveryProceed = (details: DeliveryDetailsFormValues) => {
+    setDeliveryDetails(details)
+    setIsDeliveryDetailsOpen(false)
+    setIsPaymentOpen(true)
+    setIsPaymentProcessing(false)
+    setIsPaymentSuccess(false)
+  }
+
+  const handleStartMockPayment = () => {
+    if (!deliveryDetails) {
+      return
+    }
+
+    const detailsSnapshot = deliveryDetails
+    clearPaymentTimers()
+    setIsPaymentProcessing(true)
+    setIsPaymentSuccess(false)
+
+    queuePaymentTimer(() => {
+      setIsPaymentProcessing(false)
+      setIsPaymentSuccess(true)
+
+      queuePaymentTimer(() => {
+        finalizeOrder("Payment successful. Your delivery order is confirmed.", detailsSnapshot)
+      }, 900)
+    }, 1800)
+  }
+
+  const handleCancelMockPayment = () => {
+    if (isPaymentProcessing || isPaymentSuccess) {
+      return
+    }
+
+    clearPaymentTimers()
+    setIsPaymentOpen(false)
+    setIsDeliveryDetailsOpen(true)
   }
 
   return (
@@ -410,6 +502,109 @@ export default function OrderSection() {
         </div>
       )}
 
+      {isPaymentOpen && (
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center px-4 py-6">
+          <div
+            className={`absolute inset-0 bg-black/50 ${isMobile ? "" : "backdrop-blur-sm"}`}
+            onClick={handleCancelMockPayment}
+            aria-hidden="true"
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: reduceMotion ? 0.2 : 0.3 }}
+            onClick={(event) => event.stopPropagation()}
+            className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payment-title"
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-foreground/50">Delivery Checkout</p>
+                <h3 id="payment-title" className="text-xl font-bold text-foreground">
+                  Secure Delivery Checkout
+                </h3>
+              </div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+
+            <div className="space-y-2 rounded-xl border border-border/70 bg-background/70 p-4 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-foreground/70">Amount</span>
+                <span className="font-semibold text-foreground">{formattedTotal}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-foreground/70">Neighborhood</span>
+                <span className="font-medium text-foreground">{deliveryDetails?.neighborhood ?? "-"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-foreground/70">Digital Address</span>
+                <span className="font-medium text-foreground">{deliveryDetails?.gpsAddress ?? "-"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-foreground/70">Phone</span>
+                <span className="font-medium text-foreground">{deliveryDetails?.phone ?? "-"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-foreground/70">Nearest Landmark</span>
+                <span className="font-medium text-foreground">{deliveryDetails?.landmark ?? "-"}</span>
+              </div>
+            </div>
+
+            {deliveryDetails?.resolvedAddress && (
+              <p className="mt-2 line-clamp-2 rounded-lg bg-background/70 px-3 py-2 text-xs text-foreground/65">
+                {deliveryDetails.resolvedAddress}
+              </p>
+            )}
+
+            <p className="mt-3 text-xs text-foreground/60">
+              This is a demo checkout state. No real card charge is made.
+            </p>
+
+            {isPaymentSuccess ? (
+              <div className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800">
+                Payment approved. Finalizing your order...
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleStartMockPayment}
+                disabled={isPaymentProcessing || !deliveryDetails}
+                className="mt-4 w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  {isPaymentProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Authorizing payment...
+                    </>
+                  ) : (
+                    <>
+                      <Wallet className="h-4 w-4" />
+                      Pay {formattedTotal}
+                    </>
+                  )}
+                </span>
+              </button>
+            )}
+
+            {!isPaymentSuccess && (
+              <button
+                type="button"
+                onClick={handleCancelMockPayment}
+                disabled={isPaymentProcessing}
+                className="mt-3 w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/60 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Back to Delivery Details
+              </button>
+            )}
+          </motion.div>
+        </div>
+      )}
+
       {isConfirmOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-6">
           <div
@@ -427,17 +622,15 @@ export default function OrderSection() {
               <div className="h-16 w-16 rounded-2xl overflow-hidden bg-background shadow-sm">
                 <img src="/images/manna.jpg" alt="Manna" className="h-full w-full object-cover" />
               </div>
-              <motion.div
-                initial={{ scale: 0.8, rotate: -10 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={reduceMotion ? { duration: 0.2 } : { type: "spring", stiffness: 180, damping: 14 }}
-                className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-              >
-                <CheckCircle2 className="h-9 w-9 text-primary" />
-              </motion.div>
+              <DotLottieReact
+                src="/successfully.lottie"
+                autoplay
+                loop={false}
+                style={{ width: 96, height: 96 }}
+              />
               <div>
                 <h3 className="text-xl font-bold text-foreground">Order received!</h3>
-                <p className="text-sm text-foreground/70">We will contact you shortly.</p>
+                <p className="text-sm text-foreground/70">{confirmDescription}</p>
               </div>
               <button
                 type="button"
@@ -450,6 +643,17 @@ export default function OrderSection() {
           </motion.div>
         </div>
       )}
+
+      <DeliveryDetailsModal
+        isOpen={isDeliveryDetailsOpen}
+        initialPhone={orderForm.phone}
+        onClose={() => setIsDeliveryDetailsOpen(false)}
+        onBack={() => {
+          setIsDeliveryDetailsOpen(false)
+          setIsSummaryOpen(true)
+        }}
+        onProceed={handleDeliveryProceed}
+      />
 
       {isDeliveryOpen && (
         <div className="fixed inset-0 z-[9997] flex items-center justify-center px-4 py-6">

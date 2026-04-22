@@ -7,7 +7,21 @@ import "./globals.css"
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
+const getMetadataBase = () => {
+  const primary = process.env.NEXT_PUBLIC_SITE_URL
+  const vercel = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined
+  const fallback = "http://localhost:3000"
+  const selected = primary ?? vercel ?? fallback
+
+  try {
+    return new URL(selected)
+  } catch {
+    return new URL(fallback)
+  }
+}
+
 export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
   title: "MANNA | Authentic Ghanaian Cuisine in Accra",
   description:
     "Experience authentic Ghanaian food at MANNA. Quality meals, quick service, and the perfect mix-and-match dining experience in the heart of Accra.",
